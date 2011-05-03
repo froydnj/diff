@@ -25,4 +25,12 @@
            #:window-chunks
 
            #:chunk-kind
-           #:chunk-lines))
+           #:chunk-lines
+
+           #:compute-raw-diff
+           #:common-diff-region
+           #:modified-diff-region
+           #:original-start
+           #:original-length
+           #:modified-start
+           #:modified-length))

@@ -241,6 +241,9 @@
           (incf modified-start (snake-length snake))
           (pop lcs)))))
 
+(defun compute-raw-diff (origin modified)
+  (convert-lcs-to-diff (compute-lcs origin modified)))
+
 
 ;;; producing diffs in "unified diff" format
 
