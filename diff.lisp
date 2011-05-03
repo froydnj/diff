@@ -241,6 +241,9 @@
           (incf modified-start (snake-length snake))
           (pop lcs)))))
 
+(defun compute-raw-diff (origin modified)
+  (convert-lcs-to-diff (compute-lcs origin modified)))
+
 
 ;;; producing diffs in "unified diff" format
 
@@ -252,10 +255,16 @@ of context; the default of three should be good enough for most situations.")
 (defclass diff ()
   ((original-pathname :initarg :original-pathname :accessor original-pathname)
    (modified-pathname :initarg :modified-pathname :accessor modified-pathname)
+   (window-class :initarg :window-class :reader diff-window-class)
    (windows :initform nil :accessor diff-windows)))
 
-(defclass unified-diff (diff) ())
-(defclass context-diff (diff) ())
+(defclass unified-diff (diff) ()
+  (:default-initargs
+   :window-class 'unified-diff-window))
+
+(defclass context-diff (diff) ()
+  (:default-initargs
+   :window-class 'context-diff-window))
 
 (defclass diff-generator ()
   ((interned-lines :initarg :interned-lines :reader interner)
@@ -314,13 +323,8 @@ of context; the default of three should be good enough for most situations.")
 (defun create-window (generator)
   (create-window-for-diff (diff generator)))
 
-(defgeneric create-window-for-diff (diff))
-
-(defmethod create-window-for-diff ((diff unified-diff))
-  (make-instance 'unified-diff-window))
-
-(defmethod create-window-for-diff ((context context-diff))
-  (make-instance 'context-diff-window))
+(defun create-window-for-diff (diff)
+  (make-instance (diff-window-class diff)))
 
 (defun original-window-length (window)
   (reduce #'+ (window-chunks window)
@@ -463,6 +467,12 @@ of context; the default of three should be good enough for most situations.")
                                       :original-pathname original-pathname
                                       :modified-pathname modified-pathname)))
 
+(defgeneric render-diff (diff stream)
+  (:documentation "Print DIFF object to STREAM"))
+
+(defgeneric render-diff-window (window stream)
+  (:documentation "Print WINDOW to STREAM"))
+
 (defun generate-diff (diff-kind original-pathname modified-pathname)
   "Compute a diff between ORIGINAL-PATHNAME and MODIFIED-PATHNAME.
 DIFF-KIND indicates the type of DIFF generated and should be the symbol
@@ -477,12 +487,21 @@ DIFF:UNIFIED-DIFF or DIFF:CONTEXT-DIFF."
                                             original-pathname original
                                             modified-pathname modified)))
         (walk-diff-regions context diff-regions)))))
-
+
+(defun format-diff (diff-kind original-pathname modified-pathname &optional (stream *standard-output*))
+  (render-diff (generate-diff diff-kind
+                              original-pathname
+                              modified-pathname)
+               stream))
+
+(defun format-diff-string (diff-kind original-pathname modified-pathname)
+  (with-output-to-string (out)
+    (format-diff diff-kind original-pathname modified-pathname out)))
+
 ;;; printing diffs on streams
 
-(defgeneric print-diff-window-header (window stream))
 
-(defmethod print-diff-window-header ((window unified-diff-window) stream)
+(defmethod render-diff-window :before ((window unified-diff-window) stream)
   (let ((original-length (original-window-length window))
         (modified-length (modified-window-length window)))
     (format stream "@@ -~A" (1+ (original-start-line window)))
@@ -494,10 +513,10 @@ DIFF:UNIFIED-DIFF or DIFF:CONTEXT-DIFF."
     (write-string " @@" stream)
     (terpri stream)))
 
-(defmethod print-diff-window-header ((window context-diff-window) stream)
+(defmethod render-diff-window :before ((window context-diff-window) stream)
   (format stream "***************~%"))
 
-(defmethod print-object ((object unified-diff-window) stream)
+(defmethod render-diff-window ((object unified-diff-window) stream)
   (dolist (chunk (window-chunks object))
     (let ((prefix (ecase (chunk-kind chunk)
                     (:common #\Space)
@@ -514,7 +533,7 @@ DIFF:UNIFIED-DIFF or DIFF:CONTEXT-DIFF."
 (defun window-contains-inserts-p (window)
   (some #'modified-chunk-p (window-chunks window)))
 
-(defmethod print-object ((window context-diff-window) stream)
+(defmethod render-diff-window ((window context-diff-window) stream)
   (let ((original-length (1- (original-window-length window)))
         (original-start-line (1+ (original-start-line window)))
         (modified-length (1- (modified-window-length window)))
@@ -551,23 +570,17 @@ DIFF:UNIFIED-DIFF or DIFF:CONTEXT-DIFF."
               (write-string line stream)
               (terpri stream))))))))
 
-(defgeneric print-diff-header (diff stream))
-
-(defmethod print-diff-header ((diff unified-diff) stream)
+(defmethod render-diff :before ((diff unified-diff) stream)
   (format stream "--- ~A~%+++ ~A~%"
           (namestring (original-pathname diff))
           (namestring (modified-pathname diff))))
 
-(defmethod print-diff-header ((diff context-diff) stream)
+(defmethod render-diff :before ((diff context-diff) stream)
   (format stream "*** ~A~%--- ~A~%"
           (namestring (original-pathname diff))
           (namestring (modified-pathname diff))))
 
-(defmethod print-object :before ((object diff-window) stream)
-  (print-diff-window-header object stream))
-
-(defmethod print-object ((object diff) stream)
-  (print-diff-header object stream)
+(defmethod render-diff ((object diff) stream)
   (dolist (window (diff-windows object))
-    (print-object window stream)))
+    (render-diff-window window stream)))
 
