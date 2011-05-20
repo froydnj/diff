@@ -132,7 +132,7 @@
 (defun compute-lcs* (original modified)
   (let* ((m (length original))
          (n (length modified))
-         (fp (make-array (+ m n)
+         (fp (make-array (+ m n 3)
                          :initial-element (make-instance 'snake
                                                          :original-offset -1
                                                          :modified-offset -1
