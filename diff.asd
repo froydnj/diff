@@ -6,7 +6,7 @@
 
 (defsystem :diff
   :version "0.4"
-  :depends-on (cl-ppcre)
+  :depends-on (:cl-ppcre :trivial-gray-streams)
   :components ((:file "package")
                (:file "diff" :depends-on ("package"))
                (:file "patch" :depends-on ("diff"))

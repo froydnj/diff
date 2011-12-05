@@ -6,11 +6,11 @@
 (deftype bytebuf () '(simple-array (unsigned-byte 8) (*)))
 
 ;;; a convenience class for writing byte buffers
-(defclass byte-buffer-stream (sb-gray:fundamental-binary-output-stream)
+(defclass byte-buffer-stream (trivial-gray-streams:fundamental-binary-output-stream)
   ((buffer :accessor buffer :initarg :buffer :type bytebuf)
    (index :accessor index :initform 0 :type fixnum)))
 
-(defmethod sb-gray:stream-write-byte ((stream byte-buffer-stream) byte)
+(defmethod trivial-gray-streams:stream-write-byte ((stream byte-buffer-stream) byte)
   (with-slots (buffer index) stream
     (when (>= index (length buffer))
       (error "Cannot write any more data to stream!"))
