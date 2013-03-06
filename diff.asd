@@ -1,11 +1,13 @@
 ;;;; diff.asd - the ASDF system definition for diff -*- lisp -*-
-(defpackage #:diff-system
-  (:use :cl :asdf))
+(cl:defpackage #:diff-system
+  (:use :cl))
 
-(in-package #:diff-system)
+(cl:in-package #:diff-system)
 
-(defsystem :diff
+(asdf:defsystem :diff
   :version "0.4"
+  :author "Nathan Froyd <froydnj@gmail.com>"
+  :maintainer "Nathan Froyd <froydnj@gmail.com>"
   :depends-on (:cl-ppcre :trivial-gray-streams)
   :components ((:file "package")
                (:file "diff" :depends-on ("package"))
