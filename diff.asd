@@ -11,7 +11,7 @@
                (:file "diff" :depends-on ("package"))
                (:file "patch" :depends-on ("diff"))
                (:file "vdelta" :depends-on ("package"))
-               (:file "svndiff" :depends-on ("package"))
+               (:file "svndiff" :depends-on ("package" "vdelta"))
                (:static-file "README")
                (:static-file "TODO")
                (:static-file "NEWS")

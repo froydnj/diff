@@ -2,6 +2,8 @@
 
 (in-package :diff)
 
+(defconstant +buffer-size+ 1024)
+
 (deftype op-kind () '(member :copy-target :copy-source :new-data))
 (deftype bytebuf () '(simple-array (unsigned-byte 8) (*)))
 

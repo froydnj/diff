@@ -172,8 +172,6 @@ which is a list of SVNDIFF-WINDOWs."
 
 ;;; high level driver for the whole shebang
 
-(defconstant +buffer-size+ 1024)
-
 (defun compare-files (source-filename target-filename)
   "Return a list of svndiff windows describing the differences between
 SOURCE-FILENAME and TARGET-FILENAME."
