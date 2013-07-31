@@ -89,6 +89,17 @@
           (let ((code (intern-string interner line)))
             (push code interned-file)))
         (push (coerce (nreverse interned-file) 'simple-vector) interned-files)))))
+
+(defun intern-seqs (&rest seqs)
+  (let ((interner (make-interner))
+        (interned-seqs nil))
+    (dolist (seq seqs (values interner (nreverse interned-seqs)))
+      (let ((interned-seq nil))
+        (loop :for line :in seq :do
+           (let ((code (intern-string interner line)))
+             (push code interned-seq)))
+        (push (coerce (nreverse interned-seq) 'simple-vector) interned-seqs)))))
+
 
 ;;; Computing longest common subsequences between two sequences whose
 ;;; elements compare equal via EQL.  The algorithm used here is based
@@ -243,6 +254,12 @@
 
 (defun compute-raw-diff (origin modified)
   (convert-lcs-to-diff (compute-lcs origin modified)))
+
+(defun compute-raw-seq-diff (original-seq modified-seq)
+  (multiple-value-bind (interner interned-seqs)
+      (intern-seqs original-seq modified-seq)
+    (declare (ignorable interner))
+    (convert-lcs-to-diff (apply #'compute-lcs interned-seqs))))
 
 
 ;;; producing diffs in "unified diff" format
@@ -486,6 +503,19 @@ DIFF:UNIFIED-DIFF or DIFF:CONTEXT-DIFF."
             (context (create-diff-generator diff-kind interner
                                             original-pathname original
                                             modified-pathname modified)))
+        (walk-diff-regions context diff-regions)))))
+
+(defun generate-seq-diff (diff-kind original-seq modified-seq)
+  "Compute a diff between ORIGINAL-PATHNAME and MODIFIED-PATHNAME."
+  (multiple-value-bind (interner interned-seqs)
+      (intern-seqs original-seq modified-seq)
+    (let* ((original (first interned-seqs))
+           (modified (second interned-seqs))
+           (lcs (compute-lcs original modified)))
+      (let ((diff-regions (convert-lcs-to-diff lcs))
+            (context (create-diff-generator diff-kind interner
+                                            "original" original
+                                            "modified" modified)))
         (walk-diff-regions context diff-regions)))))
 
 (defun format-diff (diff-kind original-pathname modified-pathname &optional (stream *standard-output*))
