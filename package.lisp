@@ -9,6 +9,8 @@
 
            #:apply-seq-window
            #:apply-seq-diff
+           #:apply-seq-patch
+           #:apply-patch
 
            #:render-diff
            #:render-diff-window

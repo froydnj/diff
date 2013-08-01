@@ -341,3 +341,14 @@
                                  :index-file (and index (pathname index))
                                  :prereq-string prereq)
                   patches)))))))
+
+(defun apply-seq-patch (original-seq patch)
+  "Apply PATCH to the sequence ORIGINAL-SEQ."
+  (apply-seq-diff original-seq (diff patch)))
+
+(defun apply-patch (patch &aux original)
+  "Apply PATCH."
+  (do-file-lines (line (original-pathname (diff patch))) (push line original))
+  (with-open-file (out (original-pathname (diff patch))
+                       :direction :output :if-exists :supersede)
+    (format out "~{~a~^~%~}~%" (apply-seq-patch (nreverse original) patch))))
