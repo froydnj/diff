@@ -336,19 +336,17 @@ of context; the default of three should be good enough for most situations.")
                                  (ind) (back line) (back (nth (ind) result)))
                          (incf index))
                        lines))
-                (:delete
+                ((:replace :delete)
                  (setf result
                        (append (subseq result 0 (ind))
                                (subseq result (+ (ind) (length lines)))))
                  (incf index  (length lines))
                  (decf offset (length lines)))
-                (:create
+                ((:insert :create)
                  (setf result (append (subseq result 0 (ind))
                                       lines
                                       (subseq result (ind))))
-                 (incf offset (length lines)))
-                ((:insert :replace)
-                 (error "unimplemented chunk-kind ~a" (chunk-kind chunk)))))
+                 (incf offset (length lines)))))
         (values (mapcar #'back result) offset)))))
 
 (defun apply-seq-diff (original-seq diff)
