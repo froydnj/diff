@@ -315,6 +315,52 @@ of context; the default of three should be good enough for most situations.")
    (window-chunks :initform nil
                   :accessor window-chunks)))
 
+(defun apply-seq-window (original-seq window &key (offset 0))
+  "Apply the edits encoded in WINDOW to the ORIGINAL-SEQ."
+  (multiple-value-bind (interner interned-seqs)
+      (apply #'intern-seqs original-seq
+             (mapcar #'chunk-lines (window-chunks window)))
+    (let ((index (original-start-line window))
+          (result (coerce (first interned-seqs) 'list)))
+      (flet ((ind () (+ index offset))
+             (back (line) (interned-object interner line)))
+        (loop
+           for chunk in (window-chunks window)
+           for lines in (mapcar (lambda (l) (coerce l 'list)) (cdr interned-seqs))
+           do (case (chunk-kind chunk)
+                (:common
+                 (mapc (lambda (line)
+                         (assert (eql line (nth (ind) result))
+                                 (line result index)
+                                 "window does not apply at ~d, ~s!=~s "
+                                 (ind) (back line) (back (nth (ind) result)))
+                         (incf index))
+                       lines))
+                (:delete
+                 (setf result
+                       (append (subseq result 0 (ind))
+                               (subseq result (+ (ind) (length lines)))))
+                 (incf index  (length lines))
+                 (decf offset (length lines)))
+                (:create
+                 (setf result (append (subseq result 0 (ind))
+                                      lines
+                                      (subseq result (ind))))
+                 (incf offset (length lines)))
+                ((:insert :replace)
+                 (error "unimplemented chunk-kind ~a" (chunk-kind chunk)))))
+        (values (mapcar #'back result) offset)))))
+
+(defun apply-seq-diff (original-seq diff)
+  "Apply DIFF to the sequence ORIGINAL-SEQ."
+  (apply #'values
+    (reduce
+     (lambda (accumulator window)
+       (destructuring-bind (seq offset) accumulator
+         (multiple-value-call #'list
+           (apply-seq-window seq window :offset offset))))
+     (diff-windows diff) :initial-value (list original-seq 0))))
+
 (deftype chunk-kind () '(member :common :delete :replace :insert :create))
 
 (defclass chunk ()

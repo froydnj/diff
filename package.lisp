@@ -6,7 +6,10 @@
            #:generate-diff
            #:generate-seq-diff
            #:unified-diff #:context-diff
-           
+
+           #:apply-seq-window
+           #:apply-seq-diff
+
            #:render-diff
            #:render-diff-window
            #:format-diff
