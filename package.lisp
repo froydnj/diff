@@ -4,8 +4,14 @@
   (:use :cl)
   (:export #:*diff-context-lines*
            #:generate-diff
+           #:generate-seq-diff
            #:unified-diff #:context-diff
-           
+
+           #:apply-seq-window
+           #:apply-seq-diff
+           #:apply-seq-patch
+           #:apply-patch
+
            #:render-diff
            #:render-diff-window
            #:format-diff
@@ -28,6 +34,7 @@
            #:chunk-lines
 
            #:compute-raw-diff
+           #:compute-raw-seq-diff
            #:common-diff-region
            #:modified-diff-region
            #:original-start
